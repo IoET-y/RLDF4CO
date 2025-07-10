@@ -1,0 +1,50 @@
+# hybrid_eval_config.yaml
+
+# 数据和通用模型参数
+data:
+  # 用于测试的原始数据，RL和DM都将使用这个文件中的`locs`
+  test_path: "./tsp_data_n100/tsp_solutions_test_n100_s1997_solver_concorde_100.npz" 
+  #test_path: "./Backup/tsp/tsp100_val_seed4321.npz" 
+  prefix_k: 1 # RL生成prefix的长度
+
+model: # DM模型的结构参数
+  num_nodes: 100
+  node_coord_dim: 2
+  pos_embed_num_feats: 64
+  node_embed_dim: 128
+  prefix_enc_hidden_dim: 256
+  prefix_cond_dim: 256
+  gnn_n_layers: 12
+  gnn_hidden_dim: 256
+  gnn_aggregation: "sum"
+  gnn_norm: "layer"
+  gnn_learn_norm: true
+  gnn_gated: true
+  time_embed_dim: 256
+
+# RL模型相关配置
+rl_model:
+  name: "AttentionModel" # RL4CO中模型的类名
+  problem: "tsp"
+  ckpt_path: "./rl4co_main/RL_ckpt/am_epoch_030.ckpt" # 你的RL模型检查点路径   logs/train/runs/tsp100/am-tsp100/2025-05-22_09-06-34/checkpoints/epoch_099.ckpt
+
+# Diffusion模型相关配置   
+dm_model:
+  #ckpt_path: "./ckpt_tsp_difusco_style_new/tsp_conditional_diffusion_epoch_70.pth" # 你的DM模型检查点路径
+  ckpt_path: "./ckpt_tsp_difusco_style_new_prefix_new_new_new/Stage5_1_20_best_model_checkpoint.pth"
+diffusion: # DM的扩散过程参数
+  num_timesteps: 1000
+  schedule_type: 'cosine'
+
+# 评估过程配置
+eval:
+  batch_size: 12 # 必须同时被RL和DM模型的VRAM接受
+  num_inference_steps: 20
+  inference_schedule_type: 'polynomial'
+  apply_two_opt: False
+  num_samples_to_visualize: 5 # 新增：控制为多少个样本生成对比图
+  two_opt_max_iterations: 50
+
+solver:
+  num_candidates: 8
+  dm_inference_steps: 5
