@@ -9,7 +9,7 @@ import time
 
 from data_loader_new import TSPConditionalSuffixDataset, custom_collate_fn
 from diffusion_model_new import ConditionalTSPSuffixDiffusionModel
-from discrete_diffusion_new_new import AdjacencyMatrixDiffusion
+from discrete_diffusion_new_new_new import AdjacencyMatrixDiffusion
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
