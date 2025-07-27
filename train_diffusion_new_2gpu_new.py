@@ -245,20 +245,21 @@ def train_with_curriculum(cfg: DictConfig):
     print(f"[Rank {dist.get_rank()}] DDP setup complete. Using device: {device}")
 
     try:
-        # Stage 1: Easy task - long prefixes
-        stage1_k_options = list(range(60, 91))
+        # # Stage 1: Easy task - long prefixes
+        stage1_best_ckpt = "./ckpt_tsp_difusco_style_new_prefix_new_new_new_tsp50/stage1_k0_20_epoch_40.pth"
+        stage1_k_options = list(range(0, 20))
         stage1_epochs = 10
         stage1_best_ckpt = run_training_stage(
             cfg=cfg,
-            stage_name="stage1_k60_90",
+            stage_name="stage1_k0_20",
             prefix_k_options=stage1_k_options,
             epochs_for_stage=stage1_epochs,
             device=device,              # <<< 传递 device
             local_rank=local_rank,      # <<< 传递 local_rank
-            checkpoint_to_load=None
+            checkpoint_to_load=stage1_best_ckpt
         )
-        #stage1_best_ckpt = "./ckpt_tsp_difusco_style_new_prefix_new_new/stage1_k60_90_epoch_30.pth"
-        # Stage 2: Medium task - short prefixes
+        stage1_best_ckpt = "./ckpt_tsp_difusco_style_new_prefix_new_new/stage1_k60_90_epoch_30.pth"
+        Stage 2: Medium task - short prefixes
         stage2_k_options = list(range(1, 61))
         stage2_epochs = 10
         stage2_best_ckpt = run_training_stage(
@@ -273,7 +274,7 @@ def train_with_curriculum(cfg: DictConfig):
 
         # Stage 3: Full task - all prefixes
         stage3_k_options = list(range(1, cfg.model.num_nodes))
-        stage3_epochs = 20
+        stage3_epochs = 10
         final_best_ckpt = run_training_stage(
             cfg=cfg,
             stage_name="stage3_k1_99_final",
@@ -286,7 +287,7 @@ def train_with_curriculum(cfg: DictConfig):
 
         # Stage 4: Front task - [1-30]
         stage4_k_options = list(range(1, 30))
-        stage4_epochs = 20
+        stage4_epochs = 10
         final_last_best_ckpt = run_training_stage(
             cfg=cfg,
             stage_name="stage4_k1_30_last",
@@ -298,7 +299,7 @@ def train_with_curriculum(cfg: DictConfig):
         )
 
         stage5_k_options = list(range(1, 20))
-        stage5_epochs = 20
+        stage5_epochs = 10
         final_last_best_ckpt = run_training_stage(
             cfg=cfg,
             stage_name="stage5_k1_20_last",
@@ -311,19 +312,14 @@ def train_with_curriculum(cfg: DictConfig):
 
         if dist.get_rank() == 0:
             print("\nCurriculum training finished!")
-            final_generic_path = os.path.join(os.path.dirname(final_last_best_ckpt), "Stage5_1_20_best_model_checkpoint.pth")
-            if os.path.exists(final_last_best_ckpt):
-                os.rename(final_last_best_ckpt, final_generic_path)
+            final_generic_path = os.path.join(os.path.dirname(stage1_best_ckpt), "Final_0_20_best_model_checkpoint.pth")
+            if os.path.exists(stage1_best_ckpt):
+                os.rename(stage1_best_ckpt, final_generic_path)
                 print(f"Renamed final model to: {final_generic_path}")
 
-    # finally:
-    #     # === 新增：在程序结束时清理DDP进程组 ===
-    #     ddp_cleanup()
-    #     print(f"[Rank {dist.get_rank()}] DDP resources cleaned up.")
+
     finally:
-        # It's important to get the rank *before* cleaning up the process group.
-        # Once ddp_cleanup() is called, `dist.get_rank()` will fail.
-        # We also check if the process group is initialized to be safe.
+
         if dist.is_initialized():
             rank = dist.get_rank()
             ddp_cleanup()
@@ -333,7 +329,7 @@ def train_with_curriculum(cfg: DictConfig):
             print("DDP was not initialized, no cleanup needed.")
 
 if __name__ == "__main__":
-    config_path = "tsp100_config.yaml" 
+    config_path = "tsp50_config.yaml" 
     try:
         config = OmegaConf.load(config_path)
         print("Loaded configuration from:", config_path)
